@@ -59,15 +59,23 @@ async def sailthru_postback(request: Request, payload: Any = Body(None)):
                 payload = dict(form_data)
             else:
                 # Fallback to raw body for other content types
-                payload = await request.body()
-                if isinstance(payload, bytes):
-                    payload = payload.decode(errors='replace')
+                raw_payload = await request.body()
+                if isinstance(raw_payload, bytes):
+                    payload = raw_payload.decode(errors='replace')
+                else:
+                    payload = raw_payload
         except Exception as e:
             logger.error(f"Error capturing payload: {e}")
             # Final fallback to raw body if parsing failed
-            payload = await request.body()
-            if isinstance(payload, bytes):
-                payload = payload.decode(errors='replace')
+            raw_payload = await request.body()
+            if isinstance(raw_payload, bytes):
+                payload = raw_payload.decode(errors='replace')
+            else:
+                payload = raw_payload
+    
+    # Ensure payload is serializable if it's still bytes for some reason
+    if isinstance(payload, bytes):
+        payload = payload.decode(errors='replace')
 
     # Log the captured data
     logger.info(f"Received postback from {client_host}")
