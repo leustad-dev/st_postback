@@ -4,6 +4,7 @@ import logging
 import os
 import json
 from datetime import datetime
+import pytz
 
 # Configure logging to see the captured data
 logging.basicConfig(level=logging.INFO)
@@ -17,13 +18,21 @@ def save_response_to_file(data: dict):
     if not os.path.exists(LOG_DIR):
         os.makedirs(LOG_DIR)
 
-    date_str = datetime.now().strftime("%Y_%m_%d")
+    # Use CST timezone (Central Standard Time)
+    # Note: CST can refer to Central Standard Time (UTC-6) or China Standard Time (UTC+8).
+    # Based on the user's example "2026-01-20T21:50:23 CST", usually this implies US Central Time.
+    cst = pytz.timezone('America/Chicago')
+    now = datetime.now(cst)
+
+    date_str = now.strftime("%Y_%m_%d")
+    timestamp = now.strftime("%Y-%m-%dT%H:%M:%S") + " CST"
+
     filename = f"response_log_{date_str}.txt"
     filepath = os.path.join(LOG_DIR, filename)
 
     try:
         with open(filepath, "a") as f:
-            f.write(json.dumps(data) + "\n")
+            f.write(f"{timestamp} | {json.dumps(data)}\n")
     except Exception as e:
         logger.error(f"Failed to save response to file: {e}")
 
