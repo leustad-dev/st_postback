@@ -1,0 +1,9 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8909:8909"
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
