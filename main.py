@@ -1,12 +1,31 @@
 from fastapi import FastAPI, Request, Body
 from typing import Any
 import logging
+import os
+import json
+from datetime import datetime
 
 # Configure logging to see the captured data
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+LOG_DIR = "response_logs"
+
+def save_response_to_file(data: dict):
+    if not os.path.exists(LOG_DIR):
+        os.makedirs(LOG_DIR)
+
+    date_str = datetime.now().strftime("%Y_%m_%d")
+    filename = f"response_log_{date_str}.txt"
+    filepath = os.path.join(LOG_DIR, filename)
+
+    try:
+        with open(filepath, "a") as f:
+            f.write(json.dumps(data) + "\n")
+    except Exception as e:
+        logger.error(f"Failed to save response to file: {e}")
 
 @app.post("/sailthru_postback")
 async def sailthru_postback(request: Request, payload: Any = Body(None)):
@@ -47,7 +66,7 @@ async def sailthru_postback(request: Request, payload: Any = Body(None)):
     logger.info(f"Query Params: {query_params}")
     logger.info(f"Payload: {payload}")
 
-    return {
+    response_data = {
         "status": "success",
         "captured": {
             "ip": client_host,
@@ -56,6 +75,11 @@ async def sailthru_postback(request: Request, payload: Any = Body(None)):
             "payload": payload
         }
     }
+
+    # Save the response to a file
+    save_response_to_file(response_data)
+
+    return response_data
 
 if __name__ == "__main__":
     import uvicorn
